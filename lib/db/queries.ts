@@ -295,6 +295,11 @@ export async function saveDocument({
   userId: string;
 }) {
   try {
+    // Portfolio artifacts are handled separately, not as documents
+    if (kind === 'portfolio') {
+      return [];
+    }
+    
     return await db
       .insert(document)
       .values({
