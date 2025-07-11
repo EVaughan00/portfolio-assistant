@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, type FormEvent } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -166,10 +167,11 @@ export function PortfolioForm({ onSuccess, onCancel }: PortfolioFormProps) {
             {images.map((image, index) => (
               <div key={index} className="relative group">
                 <div className="relative aspect-square rounded-md overflow-hidden bg-muted">
-                  <img
+                  <Image
                     src={URL.createObjectURL(image)}
                     alt={`Preview ${index + 1}`}
-                    className="object-cover w-full h-full"
+                    fill
+                    className="object-cover"
                   />
                   <button
                     type="button"

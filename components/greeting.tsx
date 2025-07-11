@@ -22,7 +22,7 @@ export const Greeting = () => {
         transition={{ delay: 0.6 }}
         className="text-2xl text-zinc-500"
       >
-        Welcome to Evan Vaughan's portfolio website!
+        Welcome to Evan Vaughan&apos;s portfolio website!
       </motion.div>
     </div>
   );

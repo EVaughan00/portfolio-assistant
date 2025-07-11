@@ -198,7 +198,7 @@ function PureSuggestedActions({
                     e.stopPropagation();
                     deletePortfolio(portfolio.id, portfolio.name);
                   }}
-                  className="absolute top-2 right-2 p-1 h-6 w-6 text-muted-foreground hover:text-destructive"
+                  className="absolute top-2 right-2 p-1 size-6 text-muted-foreground hover:text-destructive"
                 >
                   <TrashIcon size={12} />
                 </Button>
