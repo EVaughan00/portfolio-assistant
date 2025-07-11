@@ -1,0 +1,1 @@
+ALTER TABLE "Portfolio" ADD COLUMN "systemPrompt" text; 

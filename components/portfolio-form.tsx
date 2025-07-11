@@ -17,6 +17,7 @@ interface PortfolioFormProps {
 export function PortfolioForm({ onSuccess, onCancel }: PortfolioFormProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [systemPrompt, setSystemPrompt] = useState('');
   const [images, setImages] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -76,6 +77,9 @@ export function PortfolioForm({ onSuccess, onCancel }: PortfolioFormProps) {
       if (description.trim()) {
         formData.append('description', description.trim());
       }
+      if (systemPrompt.trim()) {
+        formData.append('systemPrompt', systemPrompt.trim());
+      }
       
       // Add all images
       images.forEach(image => {
@@ -95,6 +99,7 @@ export function PortfolioForm({ onSuccess, onCancel }: PortfolioFormProps) {
         // Reset form
         setName('');
         setDescription('');
+        setSystemPrompt('');
         setImages([]);
         
         // Call success callback
@@ -130,9 +135,19 @@ export function PortfolioForm({ onSuccess, onCancel }: PortfolioFormProps) {
           id="portfolio-description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Enter portfolio description"
+          placeholder="Brief public description of your project"
           rows={3}
-          maxLength={500}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="portfolio-system-prompt">AI Context (Optional)</Label>
+        <Textarea
+          id="portfolio-system-prompt"
+          value={systemPrompt}
+          onChange={(e) => setSystemPrompt(e.target.value)}
+          placeholder="Additional context for AI about your project (not visible to users)"
+          rows={4}
         />
       </div>
 

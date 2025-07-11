@@ -7,7 +7,8 @@ import type { UseChatHelpers } from '@ai-sdk/react';
 import type { VisibilityType } from './visibility-selector';
 import type { ChatMessage, Portfolio } from '@/lib/types';
 import type { Session } from 'next-auth';
-import { TrashIcon } from './icons';
+import { TrashIcon, PencilEditIcon } from './icons';
+import { PortfolioEditModal } from './portfolio-edit-modal';
 import { toast } from 'sonner';
 
 interface SuggestedAction {
@@ -189,19 +190,43 @@ function PureSuggestedActions({
                 </span>
               </Button>
               
-              {/* Delete button - only show for regular users */}
+              {/* Edit and Delete buttons - only show for regular users */}
               {session.user.type === 'regular' && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deletePortfolio(portfolio.id, portfolio.name);
-                  }}
-                  className="absolute top-2 right-2 p-1 size-6 text-muted-foreground hover:text-destructive"
-                >
-                  <TrashIcon size={12} />
-                </Button>
+                <>
+                  <PortfolioEditModal
+                    portfolio={portfolio}
+                    onSuccess={(updatedPortfolio) => {
+                      toast.success(`Portfolio "${updatedPortfolio.name}" updated successfully!`);
+                      // Update local state with the updated portfolio
+                      setPortfolios(prev => prev.map(p => 
+                        p.id === updatedPortfolio.id ? updatedPortfolio : p
+                      ));
+                    }}
+                    trigger={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
+                        className="absolute top-2 right-8 p-1 size-6 text-muted-foreground hover:text-blue-500"
+                      >
+                        <PencilEditIcon size={12} />
+                      </Button>
+                    }
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deletePortfolio(portfolio.id, portfolio.name);
+                    }}
+                    className="absolute top-2 right-2 p-1 size-6 text-muted-foreground hover:text-destructive"
+                  >
+                    <TrashIcon size={12} />
+                  </Button>
+                </>
               )}
             </div>
           </motion.div>

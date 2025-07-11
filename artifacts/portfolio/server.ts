@@ -17,9 +17,10 @@ export const portfolioDocumentHandler = createDocumentHandler({
 
     try {
       // Fetch portfolio data from database by name
+      // Guest users can access all portfolios, regular users only their own
       const portfolio = await getPortfolioByName({ 
         name: portfolioName, 
-        userId: session.user.id 
+        userId: session.user.type === 'guest' ? undefined : session.user.id 
       });
       
       if (!portfolio) {
@@ -33,6 +34,7 @@ export const portfolioDocumentHandler = createDocumentHandler({
         id: portfolio.id,
         name: portfolio.name,
         description: portfolio.description,
+        systemPrompt: portfolio.systemPrompt,
         images: images || [],
         createdAt: portfolio.createdAt,
         updatedAt: portfolio.updatedAt,

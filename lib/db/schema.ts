@@ -173,6 +173,7 @@ export const portfolio = pgTable('Portfolio', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
   name: text('name').notNull(),
   description: text('description'),
+  systemPrompt: text('systemPrompt'),
   userId: uuid('userId')
     .notNull()
     .references(() => user.id),

@@ -1,5 +1,5 @@
 import { auth } from '@/app/(auth)/auth';
-import { createPortfolio, addPortfolioImage, getPortfoliosByUserId, getPortfolioById, deletePortfolioById } from '@/lib/db/queries';
+import { createPortfolio, addPortfolioImage, getPortfoliosByUserId, getPortfolioById, deletePortfolioById, getAllPortfolios, updatePortfolio } from '@/lib/db/queries';
 import { NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import { z } from 'zod';
@@ -7,6 +7,13 @@ import { z } from 'zod';
 const CreatePortfolioSchema = z.object({
   name: z.string().min(1, 'Portfolio name is required').max(100, 'Portfolio name must be less than 100 characters'),
   description: z.string().optional(),
+  systemPrompt: z.string().optional(),
+});
+
+const UpdatePortfolioSchema = z.object({
+  name: z.string().min(1, 'Portfolio name is required').max(100, 'Portfolio name must be less than 100 characters'),
+  description: z.string().optional(),
+  systemPrompt: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -20,17 +27,20 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const name = formData.get('name') as string;
     const description = formData.get('description') as string;
+    const systemPrompt = formData.get('systemPrompt') as string;
     
     // Validate the form data
     const validatedData = CreatePortfolioSchema.parse({
       name,
       description: description || undefined,
+      systemPrompt: systemPrompt || undefined,
     });
 
     // Create the portfolio
     const portfolio = await createPortfolio({
       name: validatedData.name,
       description: validatedData.description,
+      systemPrompt: validatedData.systemPrompt,
       userId: session.user.id,
     });
 
@@ -108,12 +118,128 @@ export async function GET(request: Request) {
   }
 
   try {
-    const portfolios = await getPortfoliosByUserId({ userId: session.user.id });
+    // Guest users can see all portfolios, regular users only see their own
+    const portfolios = session.user.type === 'guest' 
+      ? await getAllPortfolios()
+      : await getPortfoliosByUserId({ userId: session.user.id });
+    
     return NextResponse.json({ portfolios });
   } catch (error) {
     console.error('Failed to fetch portfolios:', error);
     return NextResponse.json(
       { error: 'Failed to fetch portfolios' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request: Request) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const portfolioId = searchParams.get('id');
+
+    if (!portfolioId) {
+      return NextResponse.json({ error: 'Portfolio ID is required' }, { status: 400 });
+    }
+
+    // Check if portfolio exists and belongs to user (regular users only)
+    const existingPortfolio = await getPortfolioById({ id: portfolioId });
+    if (!existingPortfolio) {
+      return NextResponse.json({ error: 'Portfolio not found' }, { status: 404 });
+    }
+
+    // Regular users can only edit their own portfolios
+    if (session.user.type === 'regular' && existingPortfolio.userId !== session.user.id) {
+      return NextResponse.json({ error: 'Unauthorized to edit this portfolio' }, { status: 403 });
+    }
+
+    const formData = await request.formData();
+    const name = formData.get('name') as string;
+    const description = formData.get('description') as string;
+    const systemPrompt = formData.get('systemPrompt') as string;
+    
+    // Validate the form data
+    const validatedData = UpdatePortfolioSchema.parse({
+      name,
+      description: description || undefined,
+      systemPrompt: systemPrompt || undefined,
+    });
+
+    // Update the portfolio
+    const updatedPortfolio = await updatePortfolio({
+      id: portfolioId,
+      name: validatedData.name,
+      description: validatedData.description,
+      systemPrompt: validatedData.systemPrompt,
+    });
+
+    // Handle new image uploads
+    const images = formData.getAll('images') as File[];
+    const uploadedImages = [];
+
+    for (const image of images) {
+      if (image.size > 0) {
+        // Validate image
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(image.type)) {
+          return NextResponse.json(
+            { error: 'Invalid image type. Only JPEG, PNG, and WebP are allowed.' },
+            { status: 400 }
+          );
+        }
+
+        if (image.size > 5 * 1024 * 1024) { // 5MB limit
+          return NextResponse.json(
+            { error: 'Image size must be less than 5MB' },
+            { status: 400 }
+          );
+        }
+
+        // Upload to Vercel Blob
+        const fileBuffer = await image.arrayBuffer();
+        const filename = `portfolio-${portfolioId}-${Date.now()}-${image.name}`;
+        
+        const blob = await put(filename, fileBuffer, {
+          access: 'public',
+          contentType: image.type,
+        });
+
+        // Save image reference to database
+        const portfolioImage = await addPortfolioImage({
+          portfolioId: portfolioId,
+          imageUrl: blob.url,
+          imageName: image.name,
+          contentType: image.type,
+        });
+
+        uploadedImages.push(portfolioImage);
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      portfolio: {
+        ...updatedPortfolio,
+        newImages: uploadedImages,
+      },
+    });
+  } catch (error) {
+    console.error('Portfolio update error:', error);
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: error.errors.map(e => e.message).join(', ') },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: 'Failed to update portfolio' },
       { status: 500 }
     );
   }

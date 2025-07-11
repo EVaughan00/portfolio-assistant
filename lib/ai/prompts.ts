@@ -80,9 +80,10 @@ export const getPortfolioContext = async () => {
       return null;
     }
 
-    const portfolioSummary = portfolios.map((portfolio: any) => 
-      `- **${portfolio.name}**: ${portfolio.description || 'No description available'}`
-    ).join('\n');
+    const portfolioSummary = portfolios.map((portfolio: any) => {
+      const contextInfo = portfolio.systemPrompt || portfolio.description || 'No additional context available';
+      return `- **${portfolio.name}**: ${contextInfo}`;
+    }).join('\n');
 
     return `\
 Available Portfolio Projects:

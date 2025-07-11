@@ -1,5 +1,6 @@
 import { Artifact } from '@/components/create-artifact';
 import { CopyIcon } from '@/components/icons';
+import { Markdown } from '@/components/markdown';
 import { toast } from 'sonner';
 import { useState } from 'react';
 
@@ -7,6 +8,7 @@ interface PortfolioData {
   id: string;
   name: string;
   description?: string;
+  systemPrompt?: string;
   images: Array<{
     id: string;
     imageUrl: string;
@@ -45,9 +47,9 @@ function PortfolioViewer({ content }: { content: string }) {
       <div className="space-y-2">
         <h1 className="text-2xl font-bold">{portfolioData.name}</h1>
         {portfolioData.description && (
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            {portfolioData.description}
-          </p>
+          <div className="text-muted-foreground text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none">
+            <Markdown>{portfolioData.description}</Markdown>
+          </div>
         )}
       </div>
 

@@ -549,10 +549,12 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
 export async function createPortfolio({
   name,
   description,
+  systemPrompt,
   userId,
 }: {
   name: string;
   description?: string;
+  systemPrompt?: string;
   userId: string;
 }) {
   try {
@@ -562,6 +564,7 @@ export async function createPortfolio({
       .values({
         name,
         description,
+        systemPrompt,
         userId,
         createdAt: now,
         updatedAt: now,
@@ -623,12 +626,16 @@ export async function getPortfolioById({ id }: { id: string }) {
   }
 }
 
-export async function getPortfolioByName({ name, userId }: { name: string; userId: string }) {
+export async function getPortfolioByName({ name, userId }: { name: string; userId?: string }) {
   try {
+    const whereConditions = userId 
+      ? and(eq(portfolio.name, name), eq(portfolio.userId, userId))
+      : eq(portfolio.name, name);
+
     const [portfolioData] = await db
       .select()
       .from(portfolio)
-      .where(and(eq(portfolio.name, name), eq(portfolio.userId, userId)))
+      .where(whereConditions)
       .limit(1);
 
     return portfolioData;
@@ -683,6 +690,39 @@ export async function getPortfolioImages({ portfolioId }: { portfolioId: string 
     throw new ChatSDKError(
       'bad_request:database',
       'Failed to get portfolio images',
+    );
+  }
+}
+
+export async function updatePortfolio({
+  id,
+  name,
+  description,
+  systemPrompt,
+}: {
+  id: string;
+  name: string;
+  description?: string;
+  systemPrompt?: string;
+}) {
+  try {
+    const now = new Date();
+    const [updatedPortfolio] = await db
+      .update(portfolio)
+      .set({
+        name,
+        description,
+        systemPrompt,
+        updatedAt: now,
+      })
+      .where(eq(portfolio.id, id))
+      .returning();
+
+    return updatedPortfolio;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to update portfolio',
     );
   }
 }

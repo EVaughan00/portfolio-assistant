@@ -64,6 +64,7 @@ export interface Portfolio {
   id: string;
   name: string;
   description?: string;
+  systemPrompt?: string;
   userId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -81,6 +82,7 @@ export interface PortfolioImage {
 export interface CreatePortfolioRequest {
   name: string;
   description?: string;
+  systemPrompt?: string;
   images: File[];
 }
 
