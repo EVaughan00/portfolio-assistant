@@ -3,6 +3,7 @@ import type { getWeather } from './ai/tools/get-weather';
 import type { createDocument } from './ai/tools/create-document';
 import type { updateDocument } from './ai/tools/update-document';
 import type { requestSuggestions } from './ai/tools/request-suggestions';
+import type { displayPortfolio } from './ai/tools/display-portfolio';
 import type { InferUITool, UIMessage } from 'ai';
 
 import type { ArtifactKind } from '@/components/artifact';
@@ -22,12 +23,14 @@ type updateDocumentTool = InferUITool<ReturnType<typeof updateDocument>>;
 type requestSuggestionsTool = InferUITool<
   ReturnType<typeof requestSuggestions>
 >;
+type displayPortfolioTool = InferUITool<ReturnType<typeof displayPortfolio>>;
 
 export type ChatTools = {
   getWeather: weatherTool;
   createDocument: createDocumentTool;
   updateDocument: updateDocumentTool;
   requestSuggestions: requestSuggestionsTool;
+  displayPortfolio: displayPortfolioTool;
 };
 
 export type CustomUIDataTypes = {
@@ -35,6 +38,7 @@ export type CustomUIDataTypes = {
   imageDelta: string;
   sheetDelta: string;
   codeDelta: string;
+  portfolioDelta: string;
   suggestion: Suggestion;
   appendMessage: string;
   id: string;
@@ -54,4 +58,34 @@ export interface Attachment {
   name: string;
   url: string;
   contentType: string;
+}
+
+export interface Portfolio {
+  id: string;
+  name: string;
+  description?: string;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PortfolioImage {
+  id: string;
+  portfolioId: string;
+  imageUrl: string;
+  imageName: string;
+  contentType: string;
+  createdAt: Date;
+}
+
+export interface CreatePortfolioRequest {
+  name: string;
+  description?: string;
+  images: File[];
+}
+
+export interface CreatePortfolioResponse {
+  success: boolean;
+  portfolio?: Portfolio;
+  error?: string;
 }

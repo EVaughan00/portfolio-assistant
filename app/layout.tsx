@@ -29,7 +29,7 @@ const geistMono = Geist_Mono({
 });
 
 const LIGHT_THEME_COLOR = 'hsl(0 0% 100%)';
-const DARK_THEME_COLOR = 'hsl(240deg 10% 3.92%)';
+const DARK_THEME_COLOR = 'hsl(220deg 25% 6%)';
 const THEME_COLOR_SCRIPT = `\
 (function() {
   var html = document.documentElement;

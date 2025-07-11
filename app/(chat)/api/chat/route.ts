@@ -22,6 +22,7 @@ import { generateTitleFromUserMessage } from '../../actions';
 import { createDocument } from '@/lib/ai/tools/create-document';
 import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
+import { displayPortfolio } from '@/lib/ai/tools/display-portfolio';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
@@ -150,10 +151,12 @@ export async function POST(request: Request) {
     await createStreamId({ streamId, chatId: id });
 
     const stream = createUIMessageStream({
-      execute: ({ writer: dataStream }) => {
+      execute: async ({ writer: dataStream }) => {
+        const systemPromptContent = await systemPrompt({ selectedChatModel, requestHints });
+        
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, requestHints }),
+          system: systemPromptContent,
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
           experimental_activeTools:
@@ -164,6 +167,7 @@ export async function POST(request: Request) {
                   'createDocument',
                   'updateDocument',
                   'requestSuggestions',
+                  'displayPortfolio',
                 ],
           experimental_transform: smoothStream({ chunking: 'word' }),
           tools: {
@@ -174,6 +178,7 @@ export async function POST(request: Request) {
               session,
               dataStream,
             }),
+            displayPortfolio: displayPortfolio({ session, dataStream }),
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,

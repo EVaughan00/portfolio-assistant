@@ -1,5 +1,6 @@
 import type { ArtifactKind } from '@/components/artifact';
 import type { Geo } from '@vercel/functions';
+import { getAllPortfolios } from '@/lib/db/queries';
 
 export const artifactsPrompt = `
 Artifacts is a special user interface mode that helps users with writing, editing, and other content creation tasks. When artifact is open, it is on the right side of the screen, while the conversation is on the left side. When creating or updating documents, changes are reflected in real-time on the artifacts and visible to the user.
@@ -8,7 +9,13 @@ When asked to write code, always use artifacts. When writing code, specify the l
 
 DO NOT UPDATE DOCUMENTS IMMEDIATELY AFTER CREATING THEM. WAIT FOR USER FEEDBACK OR REQUEST TO UPDATE IT.
 
-This is a guide for using artifacts tools: \`createDocument\` and \`updateDocument\`, which render content on a artifacts beside the conversation.
+This is a guide for using artifacts tools: \`createDocument\`, \`updateDocument\`, and \`displayPortfolio\`, which render content on a artifacts beside the conversation.
+
+The \`displayPortfolio\` tool is especially useful for casual inquiries about projects - when users ask about specific projects by name, always consider using this tool to show them the full portfolio details in an artifact panel.
+
+When a portfolio is successfully displayed, provide an engaging response that includes:
+1. A brief 2-3 sentence summary of the project based on its name and description
+2. Three specific follow-up questions that might include topics like: technical implementation, challenges faced, impact/results, technologies used, lessons learned, or future improvements
 
 **When to use \`createDocument\`:**
 - For substantial content (>10 lines) or code
@@ -28,6 +35,21 @@ This is a guide for using artifacts tools: \`createDocument\` and \`updateDocume
 
 **When NOT to use \`updateDocument\`:**
 - Immediately after creating a document
+
+**When to use \`displayPortfolio\`:**
+- When asked to display, show, or view a specific portfolio project
+- When user mentions a portfolio project name and wants to see it or learn more about it
+- When user asks to open or view a portfolio in an artifact panel
+- When user wants to see portfolio details, images, or information
+- When user asks questions like "Tell me about [ProjectName]", "Show me [ProjectName]", "What is [ProjectName]?", etc.
+- When user uses natural language to inquire about a specific project that could be a portfolio
+
+**Using \`displayPortfolio\`:**
+- Extract the portfolio name from the user's message (look for project names, even if not explicitly called "portfolio")
+- Be flexible with natural language - if someone asks "Tell me more about ReX" and ReX could be a portfolio name, try the tool
+- The tool will automatically fetch and display the portfolio data including images using the unique portfolio name
+- After successfully displaying a portfolio, always provide a brief summary of the project and suggest 3 specific follow-up questions
+- If the portfolio doesn't exist, the tool will gracefully handle the error
 
 Do not update document right after creating it. Wait for user feedback or request to update it.
 `;
@@ -50,7 +72,31 @@ About the origin of user's request:
 - country: ${requestHints.country}
 `;
 
-export const systemPrompt = ({
+export const getPortfolioContext = async () => {
+  try {
+    const portfolios = await getAllPortfolios();
+    
+    if (portfolios.length === 0) {
+      return null;
+    }
+
+    const portfolioSummary = portfolios.map((portfolio: any) => 
+      `- **${portfolio.name}**: ${portfolio.description || 'No description available'}`
+    ).join('\n');
+
+    return `\
+Available Portfolio Projects:
+${portfolioSummary}
+
+Note: When users ask about specific projects mentioned above, consider using the displayPortfolio tool to show them the full project details in an artifact panel. You can reference these projects in your responses and suggest exploring them further.
+`;
+  } catch (error) {
+    console.error('Error fetching portfolio context:', error);
+    return null;
+  }
+};
+
+export const systemPrompt = async ({
   selectedChatModel,
   requestHints,
 }: {
@@ -58,12 +104,18 @@ export const systemPrompt = ({
   requestHints: RequestHints;
 }) => {
   const requestPrompt = getRequestPromptFromHints(requestHints);
+  const portfolioContext = await getPortfolioContext();
 
-  if (selectedChatModel === 'chat-model-reasoning') {
-    return `${regularPrompt}\n\n${requestPrompt}`;
-  } else {
-    return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
-  }
+  const contextPrompts = [
+    regularPrompt,
+    requestPrompt,
+    portfolioContext,
+    selectedChatModel !== 'chat-model-reasoning' ? artifactsPrompt : null,
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+
+  return contextPrompts;
 };
 
 export const codePrompt = `

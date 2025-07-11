@@ -27,6 +27,10 @@ import {
   type DBMessage,
   type Chat,
   stream,
+  portfolio,
+  portfolioImage,
+  type Portfolio,
+  type PortfolioImage,
 } from './schema';
 import type { ArtifactKind } from '@/components/artifact';
 import { generateUUID } from '../utils';
@@ -533,6 +537,167 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
     throw new ChatSDKError(
       'bad_request:database',
       'Failed to get stream ids by chat id',
+    );
+  }
+}
+
+export async function createPortfolio({
+  name,
+  description,
+  userId,
+}: {
+  name: string;
+  description?: string;
+  userId: string;
+}) {
+  try {
+    const now = new Date();
+    const [newPortfolio] = await db
+      .insert(portfolio)
+      .values({
+        name,
+        description,
+        userId,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+
+    return newPortfolio;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to create portfolio',
+    );
+  }
+}
+
+export async function getPortfoliosByUserId({ userId }: { userId: string }) {
+  try {
+    return await db
+      .select()
+      .from(portfolio)
+      .where(eq(portfolio.userId, userId))
+      .orderBy(desc(portfolio.createdAt));
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get portfolios by user id',
+    );
+  }
+}
+
+export async function getAllPortfolios() {
+  try {
+    return await db
+      .select()
+      .from(portfolio)
+      .orderBy(desc(portfolio.createdAt));
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get all portfolios',
+    );
+  }
+}
+
+export async function getPortfolioById({ id }: { id: string }) {
+  try {
+    const [portfolioData] = await db
+      .select()
+      .from(portfolio)
+      .where(eq(portfolio.id, id))
+      .limit(1);
+
+    return portfolioData;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get portfolio by id',
+    );
+  }
+}
+
+export async function getPortfolioByName({ name, userId }: { name: string; userId: string }) {
+  try {
+    const [portfolioData] = await db
+      .select()
+      .from(portfolio)
+      .where(and(eq(portfolio.name, name), eq(portfolio.userId, userId)))
+      .limit(1);
+
+    return portfolioData;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get portfolio by name',
+    );
+  }
+}
+
+export async function addPortfolioImage({
+  portfolioId,
+  imageUrl,
+  imageName,
+  contentType,
+}: {
+  portfolioId: string;
+  imageUrl: string;
+  imageName: string;
+  contentType: string;
+}) {
+  try {
+    const [newImage] = await db
+      .insert(portfolioImage)
+      .values({
+        portfolioId,
+        imageUrl,
+        imageName,
+        contentType,
+        createdAt: new Date(),
+      })
+      .returning();
+
+    return newImage;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to add portfolio image',
+    );
+  }
+}
+
+export async function getPortfolioImages({ portfolioId }: { portfolioId: string }) {
+  try {
+    return await db
+      .select()
+      .from(portfolioImage)
+      .where(eq(portfolioImage.portfolioId, portfolioId))
+      .orderBy(asc(portfolioImage.createdAt));
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get portfolio images',
+    );
+  }
+}
+
+export async function deletePortfolioById({ id }: { id: string }) {
+  try {
+    // First delete all images associated with the portfolio
+    await db.delete(portfolioImage).where(eq(portfolioImage.portfolioId, id));
+    
+    // Then delete the portfolio itself
+    const [deletedPortfolio] = await db
+      .delete(portfolio)
+      .where(eq(portfolio.id, id))
+      .returning();
+
+    return deletedPortfolio;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to delete portfolio by id',
     );
   }
 }

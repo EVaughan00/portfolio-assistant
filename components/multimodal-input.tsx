@@ -28,6 +28,7 @@ import { ArrowDown } from 'lucide-react';
 import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
 import type { VisibilityType } from './visibility-selector';
 import type { Attachment, ChatMessage } from '@/lib/types';
+import type { Session } from 'next-auth';
 
 function PureMultimodalInput({
   chatId,
@@ -42,6 +43,7 @@ function PureMultimodalInput({
   sendMessage,
   className,
   selectedVisibilityType,
+  session,
 }: {
   chatId: string;
   input: string;
@@ -55,6 +57,7 @@ function PureMultimodalInput({
   sendMessage: UseChatHelpers<ChatMessage>['sendMessage'];
   className?: string;
   selectedVisibilityType: VisibilityType;
+  session: Session;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
@@ -241,6 +244,7 @@ function PureMultimodalInput({
             sendMessage={sendMessage}
             chatId={chatId}
             selectedVisibilityType={selectedVisibilityType}
+            session={session}
           />
         )}
 

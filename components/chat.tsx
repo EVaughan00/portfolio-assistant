@@ -135,6 +135,8 @@ export function Chat({
           selectedVisibilityType={initialVisibilityType}
           isReadonly={isReadonly}
           session={session}
+          autoResume={autoResume}
+          hasMessages={messages.length > 0}
         />
 
         <Messages
@@ -162,6 +164,7 @@ export function Chat({
               setMessages={setMessages}
               sendMessage={sendMessage}
               selectedVisibilityType={visibilityType}
+              session={session}
             />
           )}
         </form>
@@ -182,6 +185,7 @@ export function Chat({
         votes={votes}
         isReadonly={isReadonly}
         selectedVisibilityType={visibilityType}
+        session={session}
       />
     </>
   );

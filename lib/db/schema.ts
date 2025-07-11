@@ -168,3 +168,29 @@ export const stream = pgTable(
 );
 
 export type Stream = InferSelectModel<typeof stream>;
+
+export const portfolio = pgTable('Portfolio', {
+  id: uuid('id').primaryKey().notNull().defaultRandom(),
+  name: text('name').notNull(),
+  description: text('description'),
+  userId: uuid('userId')
+    .notNull()
+    .references(() => user.id),
+  createdAt: timestamp('createdAt').notNull(),
+  updatedAt: timestamp('updatedAt').notNull(),
+});
+
+export type Portfolio = InferSelectModel<typeof portfolio>;
+
+export const portfolioImage = pgTable('PortfolioImage', {
+  id: uuid('id').primaryKey().notNull().defaultRandom(),
+  portfolioId: uuid('portfolioId')
+    .notNull()
+    .references(() => portfolio.id),
+  imageUrl: text('imageUrl').notNull(),
+  imageName: text('imageName').notNull(),
+  contentType: text('contentType').notNull(),
+  createdAt: timestamp('createdAt').notNull(),
+});
+
+export type PortfolioImage = InferSelectModel<typeof portfolioImage>;
