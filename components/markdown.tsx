@@ -6,8 +6,62 @@ import { CodeBlock } from './code-block';
 
 const components: Partial<Components> = {
   // @ts-expect-error
-  code: CodeBlock,
+  code: ({ node, inline, className, children, ...props }) => {
+    // Force block code elements to break out of paragraphs
+    if (!inline) {
+      return (
+        <>
+          <CodeBlock 
+            node={node} 
+            inline={inline} 
+            className={className || ''} 
+            {...props} 
+          >
+            {children}
+          </CodeBlock>
+        </>
+      );
+    }
+    return (
+      <CodeBlock 
+        node={node} 
+        inline={inline} 
+        className={className || ''} 
+        {...props} 
+      >
+        {children}
+      </CodeBlock>
+    );
+  },
   pre: ({ children }) => <>{children}</>,
+  p: ({ node, children, ...props }) => {
+    // Check if this paragraph contains code blocks at any level
+    const containsCodeBlock = (node: any): boolean => {
+      if (!node) return false;
+      
+      if (node.tagName === 'code' || node.tagName === 'pre') {
+        return true;
+      }
+      
+      if (node.type === 'element' && node.tagName === 'code') {
+        return true;
+      }
+      
+      if (node.children) {
+        return node.children.some(containsCodeBlock);
+      }
+      
+      return false;
+    };
+    
+    if (containsCodeBlock(node)) {
+      // Return a fragment to avoid wrapping in any element
+      return <>{children}</>;
+    }
+    
+    // Otherwise render as normal paragraph
+    return <p {...props}>{children}</p>;
+  },
   ol: ({ node, children, ...props }) => {
     return (
       <ol className="list-decimal list-outside ml-4" {...props}>

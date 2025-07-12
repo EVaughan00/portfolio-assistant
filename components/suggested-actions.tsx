@@ -135,38 +135,78 @@ function PureSuggestedActions({
 
   if (isLoading) {
     return (
-      <div
-        data-testid="suggested-actions"
-        className="grid sm:grid-cols-2 gap-2 w-full"
-      >
-        {Array.from({ length: 4 }).map((_, index) => (
-          <div
-            key={`loading-${index}`}
-            className={`${index > 1 ? 'hidden sm:block' : 'block'} border rounded-xl px-4 py-3.5 animate-pulse`}
-          >
-            <div className="h-4 bg-muted rounded mb-2"></div>
-            <div className="h-3 bg-muted rounded w-3/4"></div>
+      <div className="w-full space-y-3 sm:space-y-4 overflow-hidden">
+        {/* Instructions chip for loading state */}
+        <div className="flex justify-center px-4 sm:px-0">
+          <div className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-full bg-muted/50 text-xs sm:text-sm text-muted-foreground border border-muted max-w-full">
+            <div className="size-3.5 bg-muted rounded-full animate-pulse"></div>
+            <span className="text-center leading-tight">Loading your projects...</span>
           </div>
-        ))}
+        </div>
+        
+        <div
+          data-testid="suggested-actions"
+          className="w-full max-h-[35vh] sm:max-h-[50vh] overflow-y-auto space-y-2 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2"
+        >
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div
+              key={`loading-${index}`}
+              className="block border rounded-xl px-4 py-3.5 animate-pulse"
+            >
+              <div className="h-4 bg-muted rounded mb-2"></div>
+              <div className="h-3 bg-muted rounded w-3/4"></div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div
-      data-testid="suggested-actions"
-      className="grid sm:grid-cols-2 gap-2 w-full"
-    >
-      {portfolios.length > 0 ? (
+    <div className="w-full space-y-3 sm:space-y-4 overflow-hidden">
+      {/* Instructions chip */}
+      <div className="flex justify-center px-4 sm:px-0">
+        <div className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-full bg-muted/50 text-xs sm:text-sm text-muted-foreground border border-muted max-w-full">
+          <svg
+            className="shrink-0"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M9 12l2 2 4-4" />
+            <path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3" />
+            <path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3" />
+          </svg>
+          <span className="text-center leading-tight">
+            Click on any {portfolios.length > 0 ? 'project' : 'card'} below to get started
+            {portfolios.length > 6 && (
+              <span className="block text-xs opacity-75 mt-1">
+                Scroll to see all {portfolios.length} projects
+              </span>
+            )}
+          </span>
+        </div>
+      </div>
+
+      <div
+        data-testid="suggested-actions"
+        className="w-full max-h-[35vh] sm:max-h-[50vh] overflow-y-auto space-y-2 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2"
+      >
+        {portfolios.length > 0 ? (
         // Show portfolio-based suggestions with delete buttons for regular users
-        portfolios.slice(0, 4).map((portfolio, index) => (
+        portfolios.map((portfolio, index) => (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            transition={{ delay: 0.05 * index }}
+            transition={{ delay: 0.05 * Math.min(index, 8) }}
             key={`portfolio-${portfolio.id}-${index}`}
-            className={index > 1 ? 'hidden sm:block' : 'block'}
+            className="block"
           >
             <div className="relative border rounded-xl">
               <Button
@@ -182,10 +222,10 @@ function PureSuggestedActions({
                     }],
                   });
                 }}
-                className="text-left px-4 py-3.5 text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start"
+                className="text-left px-4 py-3.5 text-sm flex-1 gap-1 flex-col w-full h-auto justify-start items-start min-w-0"
               >
-                <span className="font-medium">{portfolio.name}</span>
-                <span className="text-muted-foreground">
+                <span className="font-medium truncate w-full">{portfolio.name}</span>
+                <span className="text-muted-foreground text-wrap break-words">
                   {portfolio.description?.slice(0, 50) + "..." || 'View this portfolio project'}
                 </span>
               </Button>
@@ -240,7 +280,7 @@ function PureSuggestedActions({
             exit={{ opacity: 0, y: 20 }}
             transition={{ delay: 0.05 * index }}
             key={`suggested-action-${suggestedAction.title}-${index}`}
-            className={index > 1 ? 'hidden sm:block' : 'block'}
+            className="block"
           >
             <Button
               variant="ghost"
@@ -252,16 +292,17 @@ function PureSuggestedActions({
                   parts: [{ type: 'text', text: suggestedAction.action }],
                 });
               }}
-              className="text-left border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start"
+              className="text-left border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 flex-col w-full h-auto justify-start items-start min-w-0"
             >
-              <span className="font-medium">{suggestedAction.title}</span>
-              <span className="text-muted-foreground">
+              <span className="font-medium truncate w-full">{suggestedAction.title}</span>
+              <span className="text-muted-foreground text-wrap break-words">
                 {suggestedAction.label}
               </span>
             </Button>
           </motion.div>
         ))
       )}
+      </div>
     </div>
   );
 }

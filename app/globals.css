@@ -59,38 +59,57 @@
         --sidebar-ring: 217.2 91.2% 59.8%;
     }
     .dark {
-        --background: 220 25% 6%;
-        --foreground: 180 100% 90%;
-        --card: 220 25% 8%;
-        --card-foreground: 180 100% 90%;
-        --popover: 220 25% 8%;
-        --popover-foreground: 180 100% 90%;
-        --primary: 180 100% 60%;
-        --primary-foreground: 220 25% 6%;
-        --secondary: 220 25% 12%;
-        --secondary-foreground: 180 100% 90%;
-        --muted: 220 25% 12%;
-        --muted-foreground: 180 30% 70%;
-        --accent: 28 100% 65%;
-        --accent-foreground: 220 25% 6%;
+        /* Deep blue/navy backgrounds inspired by the image */
+        --background: 220 70% 6%;
+        --foreground: 220 20% 92%;
+        --card: 220 65% 10%;
+        --card-foreground: 220 20% 92%;
+        --popover: 220 65% 10%;
+        --popover-foreground: 220 20% 92%;
+        
+        /* Subtle blue-teal primary color for user messages */
+        --primary: 200 50% 45%;
+        --primary-foreground: 220 20% 98%;
+        
+        /* Slightly lighter blue for secondary elements */
+        --secondary: 220 50% 16%;
+        --secondary-foreground: 220 20% 92%;
+        
+        /* Muted blue tones */
+        --muted: 220 50% 16%;
+        --muted-foreground: 220 25% 70%;
+        
+        /* Electric cyan accent color from the digital elements */
+        --accent: 190 100% 70%;
+        --accent-foreground: 220 70% 6%;
+        
+        /* Keep destructive as red */
         --destructive: 0 84% 65%;
-        --destructive-foreground: 180 100% 90%;
-        --border: 220 25% 15%;
-        --input: 220 25% 15%;
-        --ring: 180 100% 60%;
-        --chart-1: 180 100% 60%;
-        --chart-2: 28 100% 65%;
-        --chart-3: 280 80% 65%;
-        --chart-4: 200 100% 55%;
-        --chart-5: 45 100% 60%;
-        --sidebar-background: 220 25% 8%;
-        --sidebar-foreground: 180 100% 90%;
-        --sidebar-primary: 180 100% 60%;
-        --sidebar-primary-foreground: 220 25% 6%;
-        --sidebar-accent: 220 25% 12%;
-        --sidebar-accent-foreground: 180 100% 90%;
-        --sidebar-border: 220 25% 15%;
-        --sidebar-ring: 180 100% 60%;
+        --destructive-foreground: 220 20% 92%;
+        
+        /* Subtle blue borders and inputs */
+        --border: 220 45% 22%;
+        --input: 220 45% 22%;
+        
+        /* Subtle cyan ring for focus states */
+        --ring: 190 60% 55%;
+        
+        /* Updated chart colors with blue theme palette */
+        --chart-1: 200 50% 45%;    /* Subtle blue-teal */
+        --chart-2: 190 100% 70%;   /* Electric cyan */
+        --chart-3: 240 70% 60%;    /* Blue/purple */
+        --chart-4: 45 100% 70%;    /* Yellow/gold */
+        --chart-5: 200 70% 65%;    /* Light blue */
+        
+        /* Sidebar with matching blue theme */
+        --sidebar-background: 220 65% 10%;
+        --sidebar-foreground: 220 20% 92%;
+        --sidebar-primary: 200 50% 45%;
+        --sidebar-primary-foreground: 220 20% 98%;
+        --sidebar-accent: 220 50% 16%;
+        --sidebar-accent-foreground: 220 20% 92%;
+        --sidebar-border: 220 45% 22%;
+        --sidebar-ring: 190 60% 55%;
     }
 }
 
@@ -129,13 +148,13 @@
 
 .cm-editor,
 .cm-gutters {
-    @apply bg-background dark:bg-zinc-800 outline-none selection:bg-zinc-900 !important;
+    @apply bg-background dark:bg-muted outline-none selection:bg-accent/20 !important;
 }
 
 .ͼo.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground,
 .ͼo.cm-selectionBackground,
 .ͼo.cm-content::selection {
-    @apply bg-zinc-200 dark:bg-zinc-900 !important;
+    @apply bg-zinc-200 dark:bg-accent/30 !important;
 }
 
 .cm-activeLine,
@@ -160,5 +179,42 @@
 }
 
 .suggestion-highlight {
-    @apply bg-blue-200 hover:bg-blue-300 dark:hover:bg-blue-400/50 dark:text-blue-50 dark:bg-blue-500/40;
+    @apply bg-blue-200 hover:bg-blue-300 dark:hover:bg-accent/50 dark:text-accent-foreground dark:bg-accent/40;
+}
+
+/* Futuristic theme enhancements */
+.dark {
+    /* Add subtle gradients for more depth */
+    --gradient-from: 220 70% 6%;
+    --gradient-to: 220 65% 10%;
+}
+
+/* Enhanced scrollbar styling for dark theme */
+.dark ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+    background: hsl(220 50% 18%);
+    border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: hsl(220 40% 35%);
+    border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: hsl(190 100% 70%);
+}
+
+/* Add subtle glow effects for primary elements */
+.dark .ring-primary {
+    box-shadow: 0 0 0 2px hsl(190 60% 55%), 0 0 8px hsl(190 60% 55% / 0.2);
+}
+
+/* Enhanced focus states */
+.dark .focus-visible\:ring-2:focus-visible {
+    box-shadow: 0 0 0 2px hsl(190 60% 55%), 0 0 6px hsl(190 60% 55% / 0.3);
 }

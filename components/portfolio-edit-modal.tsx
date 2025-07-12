@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, type FormEvent } from 'react';
+import { useState, useRef, useEffect, useCallback, type FormEvent } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,14 +24,49 @@ interface PortfolioEditModalProps {
   trigger?: React.ReactNode;
 }
 
+interface ExistingImage {
+  id: string;
+  imageUrl: string;
+  imageName: string;
+  contentType: string;
+  createdAt: Date;
+}
+
 export function PortfolioEditModal({ portfolio, onSuccess, trigger }: PortfolioEditModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState(portfolio.name);
   const [description, setDescription] = useState(portfolio.description || '');
   const [systemPrompt, setSystemPrompt] = useState(portfolio.systemPrompt || '');
   const [images, setImages] = useState<File[]>([]);
+  const [existingImages, setExistingImages] = useState<ExistingImage[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingImages, setIsLoadingImages] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch existing images when modal opens
+  const fetchExistingImages = useCallback(async () => {
+    if (!isOpen) return;
+    
+    setIsLoadingImages(true);
+    try {
+      const response = await fetch(`/api/portfolio/images?portfolioId=${portfolio.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setExistingImages(data.images || []);
+      } else {
+        console.error('Failed to fetch portfolio images');
+      }
+    } catch (error) {
+      console.error('Error fetching portfolio images:', error);
+    } finally {
+      setIsLoadingImages(false);
+    }
+  }, [isOpen, portfolio.id]);
+
+  // Fetch images when modal opens
+  useEffect(() => {
+    fetchExistingImages();
+  }, [isOpen, fetchExistingImages]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -70,6 +105,31 @@ export function PortfolioEditModal({ portfolio, onSuccess, trigger }: PortfolioE
 
   const removeImage = (index: number) => {
     setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const deleteExistingImage = async (imageId: string, imageName: string) => {
+    if (!confirm(`Are you sure you want to delete "${imageName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/portfolio/images?imageId=${imageId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast.success(`Image "${imageName}" deleted successfully!`);
+        // Remove the image from local state
+        setExistingImages(prev => prev.filter(img => img.id !== imageId));
+      } else {
+        toast.error(data.error || 'Failed to delete image');
+      }
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      toast.error('Failed to delete image');
+    }
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -133,6 +193,7 @@ export function PortfolioEditModal({ portfolio, onSuccess, trigger }: PortfolioE
     setDescription(portfolio.description || '');
     setSystemPrompt(portfolio.systemPrompt || '');
     setImages([]);
+    setExistingImages([]);
     setIsOpen(false);
   };
 
@@ -188,6 +249,41 @@ export function PortfolioEditModal({ portfolio, onSuccess, trigger }: PortfolioE
               rows={4}
             />
           </div>
+
+          {/* Existing Images Section */}
+          {(existingImages.length > 0 || isLoadingImages) && (
+            <div className="space-y-2">
+              <Label>Existing Images</Label>
+              {isLoadingImages ? (
+                <div className="text-sm text-muted-foreground">Loading existing images...</div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {existingImages.map((existingImage) => (
+                    <div key={existingImage.id} className="relative group">
+                      <div className="relative aspect-square rounded-md overflow-hidden bg-muted">
+                        <Image
+                          src={existingImage.imageUrl}
+                          alt={existingImage.imageName}
+                          fill
+                          className="object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => deleteExistingImage(existingImage.id, existingImage.imageName)}
+                          className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <CrossIcon size={12} />
+                        </button>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 truncate">
+                        {existingImage.imageName}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Add New Images</Label>

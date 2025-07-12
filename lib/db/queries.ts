@@ -694,6 +694,65 @@ export async function getPortfolioImages({ portfolioId }: { portfolioId: string 
   }
 }
 
+export async function getPortfolioImageById({ id }: { id: string }) {
+  try {
+    const [imageData] = await db
+      .select({
+        id: portfolioImage.id,
+        imageUrl: portfolioImage.imageUrl,
+        imageName: portfolioImage.imageName,
+        contentType: portfolioImage.contentType,
+        portfolioId: portfolioImage.portfolioId,
+        createdAt: portfolioImage.createdAt,
+        userId: portfolio.userId,
+      })
+      .from(portfolioImage)
+      .innerJoin(portfolio, eq(portfolioImage.portfolioId, portfolio.id))
+      .where(eq(portfolioImage.id, id))
+      .limit(1);
+
+    return imageData;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get portfolio image by id',
+    );
+  }
+}
+
+export async function deletePortfolioImage({ id, userId }: { id: string; userId: string }) {
+  try {
+    // First verify the user owns the portfolio containing this image
+    const imageData = await getPortfolioImageById({ id });
+    if (!imageData) {
+      throw new ChatSDKError(
+        'not_found:database',
+        'Portfolio image not found',
+      );
+    }
+
+    // Check ownership for regular users
+    if (imageData.userId !== userId) {
+      throw new ChatSDKError(
+        'forbidden:database',
+        'Unauthorized to delete this image',
+      );
+    }
+
+    const [deletedImage] = await db
+      .delete(portfolioImage)
+      .where(eq(portfolioImage.id, id))
+      .returning();
+
+    return deletedImage;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to delete portfolio image',
+    );
+  }
+}
+
 export async function updatePortfolio({
   id,
   name,

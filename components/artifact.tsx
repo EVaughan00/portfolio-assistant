@@ -95,7 +95,9 @@ function PureArtifact({
     isLoading: isDocumentsFetching,
     mutate: mutateDocuments,
   } = useSWR<Array<Document>>(
-    artifact.documentId !== 'init' && artifact.status !== 'streaming'
+    artifact.documentId !== 'init' && 
+    artifact.status !== 'streaming' && 
+    artifact.kind !== 'portfolio'
       ? `/api/document?id=${artifact.documentId}`
       : null,
     fetcher,
@@ -108,7 +110,7 @@ function PureArtifact({
   const { open: isSidebarOpen } = useSidebar();
 
   useEffect(() => {
-    if (documents && documents.length > 0) {
+    if (documents && documents.length > 0 && artifact.kind !== 'portfolio') {
       const mostRecentDocument = documents.at(-1);
 
       if (mostRecentDocument) {
@@ -120,18 +122,20 @@ function PureArtifact({
         }));
       }
     }
-  }, [documents, setArtifact]);
+  }, [documents, setArtifact, artifact.kind]);
 
   useEffect(() => {
-    mutateDocuments();
-  }, [artifact.status, mutateDocuments]);
+    if (artifact.kind !== 'portfolio') {
+      mutateDocuments();
+    }
+  }, [artifact.status, mutateDocuments, artifact.kind]);
 
   const { mutate } = useSWRConfig();
   const [isContentDirty, setIsContentDirty] = useState(false);
 
   const handleContentChange = useCallback(
     (updatedContent: string) => {
-      if (!artifact) return;
+      if (!artifact || artifact.kind === 'portfolio') return;
 
       mutate<Array<Document>>(
         `/api/document?id=${artifact.documentId}`,
@@ -180,7 +184,7 @@ function PureArtifact({
 
   const saveContent = useCallback(
     (updatedContent: string, debounce: boolean) => {
-      if (document && updatedContent !== document.content) {
+      if (document && updatedContent !== document.content && artifact.kind !== 'portfolio') {
         setIsContentDirty(true);
 
         if (debounce) {
@@ -190,16 +194,18 @@ function PureArtifact({
         }
       }
     },
-    [document, debouncedHandleContentChange, handleContentChange],
+    [document, debouncedHandleContentChange, handleContentChange, artifact.kind],
   );
 
   function getDocumentContentById(index: number) {
+    if (artifact.kind === 'portfolio') return artifact.content;
     if (!documents) return '';
     if (!documents[index]) return '';
     return documents[index].content ?? '';
   }
 
   const handleVersionChange = (type: 'next' | 'prev' | 'toggle' | 'latest') => {
+    if (artifact.kind === 'portfolio') return;
     if (!documents) return;
 
     if (type === 'latest') {
@@ -228,10 +234,13 @@ function PureArtifact({
    * NOTE: if there are no documents, or if
    * the documents are being fetched, then
    * we mark it as the current version.
+   * Portfolio artifacts are always current version.
    */
 
   const isCurrentVersion =
-    documents && documents.length > 0
+    artifact.kind === 'portfolio'
+      ? true
+      : documents && documents.length > 0
       ? currentVersionIndex === documents.length - 1
       : true;
 
