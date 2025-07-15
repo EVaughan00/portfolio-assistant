@@ -2,7 +2,7 @@ import { Artifact } from '@/components/create-artifact';
 import { CopyIcon } from '@/components/icons';
 import { Markdown } from '@/components/markdown';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface PortfolioData {
   id: string;
@@ -20,23 +20,98 @@ interface PortfolioData {
   updatedAt: Date;
 }
 
-function PortfolioViewer({ content }: { content: string }) {
-  const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
+interface PortfolioError {
+  error: true;
+  message: string;
+  portfolioName: string;
+}
 
-  // Parse the portfolio data from the content
-  if (!portfolioData && content) {
-    try {
-      const parsed = JSON.parse(content);
-      setPortfolioData(parsed);
-    } catch (error) {
-      console.error('Error parsing portfolio data:', error);
+function PortfolioViewer({ content, status }: { content: string; status: 'streaming' | 'idle' }) {
+  const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
+  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [timeoutReached, setTimeoutReached] = useState(false);
+
+
+
+  // Add timeout for slow loading
+  useEffect(() => {
+    if (!content && status === 'streaming') {
+      const timer = setTimeout(() => {
+        setTimeoutReached(true);
+      }, 10000); // 10 second timeout
+
+      return () => clearTimeout(timer);
     }
+  }, [content, status]);
+
+  // Parse portfolio data when content changes
+  useEffect(() => {
+    if (content && !portfolioData && !hasError) {
+      try {
+        const parsed = JSON.parse(content);
+        
+        // Check if it's an error response
+        if (parsed.error) {
+          setHasError(true);
+          setErrorMessage(parsed.message || 'Unknown error occurred');
+          setTimeoutReached(false);
+        } else {
+          setPortfolioData(parsed);
+          setHasError(false);
+          setErrorMessage('');
+          setTimeoutReached(false);
+        }
+      } catch (error) {
+        setHasError(true);
+        setErrorMessage('Failed to parse portfolio data');
+      }
+    }
+  }, [content, portfolioData, hasError]);
+
+  // Handle timeout case
+  if (timeoutReached && !portfolioData && !hasError && !content) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center space-y-4">
+          <div className="text-amber-600 font-medium">Loading is taking longer than expected</div>
+          <div className="text-muted-foreground text-sm">
+            This might be due to a slow network connection or server issues.
+          </div>
+          <div className="text-muted-foreground text-xs">
+            Please try again in a moment or check your internet connection.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center space-y-2">
+          <div className="text-destructive font-medium">Failed to load portfolio</div>
+          <div className="text-muted-foreground text-sm">{errorMessage}</div>
+          <div className="text-muted-foreground text-xs">Please try again or check if the portfolio name is correct.</div>
+        </div>
+      </div>
+    );
   }
 
   if (!portfolioData) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-muted-foreground">Loading portfolio...</div>
+        <div className="text-center space-y-2">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <div className="text-muted-foreground">
+            {content ? 'Processing portfolio data...' : 'Loading portfolio...'}
+          </div>
+          {status === 'streaming' && (
+            <div className="text-xs text-muted-foreground">
+              Fetching from database...
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -86,6 +161,15 @@ export const portfolioArtifact = new Artifact({
       setArtifact((draftArtifact) => ({
         ...draftArtifact,
         content: streamPart.data,
+        isVisible: true,
+        status: 'streaming',
+      }));
+    }
+    
+    // Set artifact visible when we know it's a portfolio type, not just when data arrives
+    if (streamPart.type === 'data-kind' && streamPart.data === 'portfolio') {
+      setArtifact((draftArtifact) => ({
+        ...draftArtifact,
         isVisible: true,
         status: 'streaming',
       }));

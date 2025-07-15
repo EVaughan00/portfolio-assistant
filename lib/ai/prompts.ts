@@ -47,9 +47,10 @@ When a portfolio is successfully displayed, provide an engaging response that in
 **Using \`displayPortfolio\`:**
 - Extract the portfolio name from the user's message (look for project names, even if not explicitly called "portfolio")
 - Be flexible with natural language - if someone asks "Tell me more about ReX" and ReX could be a portfolio name, try the tool
-- The tool will automatically fetch and display the portfolio data including images using the unique portfolio name
+- **IMPORTANT**: The portfolio name extraction is critical. Use the exact portfolio names from the "Available Portfolio Projects" list below when possible
+- The tool will automatically fetch and display the portfolio data including images using the portfolio name (with fuzzy matching)
 - After successfully displaying a portfolio, always provide a brief summary of the project and suggest 3 specific follow-up questions
-- If the portfolio doesn't exist, the tool will gracefully handle the error
+- If the portfolio doesn't exist, the tool will gracefully handle the error with helpful suggestions
 
 Do not update document right after creating it. Wait for user feedback or request to update it.
 `;
